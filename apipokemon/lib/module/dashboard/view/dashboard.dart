@@ -1,90 +1,82 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:apipokemon/core/injection.dart';
+import 'package:apipokemon/module/dashboard/controller/dashboard_controller.dart';
+import 'package:apipokemon/module/dashboard/state/dashboard_state.dart';
+import 'package:apipokemon/module/dashboard/core/domain/model/pokemon.dart';
 
-class DashboardPage extends StatefulWidget {
-  @override
-  State<DashboardPage> createState() => _DashboardPageState();
-}
+class DashboardView extends StatelessWidget {
+  final controller = getIt<DashboardController>();
 
-class _DashboardPageState extends State<DashboardPage> {
-  List<dynamic> _allPokemons = [];
-  List<dynamic> _filteredPokemons = [];
-  bool _isLoading = true;
-  final TextEditingController _controller = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    fetchPokemons();
-    _controller.addListener(_filterPokemons);
-  }
-
-  Future<void> fetchPokemons() async {
-    final response = await http.get(Uri.parse("https://pokeapi.co/api/v2/pokemon?limit=151"));
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        _allPokemons = data['results'];
-        _filteredPokemons = _allPokemons;
-        _isLoading = false;
-      });
-    }
-  }
-
-  void _filterPokemons() {
-    final query = _controller.text.toLowerCase();
-    setState(() {
-      _filteredPokemons = _allPokemons
-          .where((pokemon) => pokemon['name'].toLowerCase().contains(query))
-          .toList();
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  DashboardView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pokédex simples'),
-        centerTitle: true,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      labelText: "Pesquisar Pokémon",
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _filteredPokemons.length,
-                    itemBuilder: (context, index) {
-                      final pokemon = _filteredPokemons[index];
-                      return ListTile(
-                        title: Text(pokemon['name']),
-                      );
-                    },
-                  ),
-                ),
-              ],
+    return BlocProvider(
+      create: (context) => controller,
+      child: BlocBuilder<DashboardController, DashboardState>(
+        builder: (context, state) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Pokédex'),
+              centerTitle: true,
             ),
+            body: Builder(
+              builder: (context) {
+                if (state is DashboardLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state is DashboardLoaded) {
+                  final pokemons = state.pokemons;
+
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            labelText: "Pesquisar Pokémon",
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onChanged: (query) {
+                            final filtered = pokemons
+                                .where((pokemon) =>
+                                    pokemon.name
+                                        .toLowerCase()
+                                        .contains(query.toLowerCase()))
+                                .toList();
+                            context.read<DashboardController>().emit(
+                                  DashboardLoaded(filtered),
+                                );
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: pokemons.length,
+                          itemBuilder: (context, index) {
+                            final pokemon = pokemons[index];
+                            return ListTile(
+                              title: Text(pokemon.name),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                } else if (state is DashboardInitial) {
+                  return const Center(
+                    child: Text('Carregando Pokémons...'),
+                  );
+                }
+                return const Center(child: Text('Erro ao carregar Pokémons'));
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 }

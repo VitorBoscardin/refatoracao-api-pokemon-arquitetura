@@ -5,7 +5,7 @@ import 'package:apipokemon/module/dashboard/view/dashboard.dart';
 void main() {
   testWidgets('Carrega e exibe a lista de Pokémon', (WidgetTester tester) async {
     await tester.pumpWidget( MaterialApp(
-      home: DashboardPage(),
+      home: DashboardView(),
     ));
 
     expect(find.text('Pokédex'), findsOneWidget);

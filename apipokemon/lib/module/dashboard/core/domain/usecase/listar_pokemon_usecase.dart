@@ -1,12 +1,14 @@
-import 'package:apipokemon/module/dashboard/data/repository/listar_pokemon_repository.dart';
+import 'package:injectable/injectable.dart';
 import 'package:apipokemon/module/dashboard/core/domain/model/pokemon.dart';
+import 'package:apipokemon/module/dashboard/core/domain/contract/listar_pokemon_repository.dart';
 
+@injectable
 class ListarPokemonUsecase {
-  final ListarPokemonRepository repository;
+  final ListarPokemonRepository listarPokemonRepository;
 
-  ListarPokemonUsecase(this.repository);
+  ListarPokemonUsecase({required this.listarPokemonRepository});
 
   Future<List<Pokemon>> call() async {
-    return await repository.fetchPokemons();
+    return await listarPokemonRepository();
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:apipokemon/module/dashboard/view/dashboard.dart'; 
+import 'package:apipokemon/core/injection.dart';
+import 'package:apipokemon/module/dashboard/view/dashboard.dart';
 
 void main() {
+  configureDependencies(); 
   runApp(const MyApp());
 }
 
@@ -13,8 +15,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Pokédex',
-      theme: ThemeData(primarySwatch: Colors.red),
-      home: DashboardPage(), 
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
+        useMaterial3: true,
+      ),
+      home: DashboardView(), 
     );
   }
 }
